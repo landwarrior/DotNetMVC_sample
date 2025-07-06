@@ -4,17 +4,20 @@ ASP.NET MVC と .NET8 で Web アプリのサンプルを作ってみる
 
 ## 初期セットアップ
 
-プロジェクト作成は以下のコマンドを実行したと思う
-
+プロジェクト作成は以下のコマンドを実行したと思う。
 ```console
 dotnet new mvc -n DotNetMVC_sample -o MyMvcApp
 ```
+基本的に [ASP.NET Core MVC の概要 | Microsoft Learn](https://learn.microsoft.com/ja-jp/aspnet/core/tutorials/first-mvc-app/start-mvc?view=aspnetcore-8.0&tabs=visual-studio) と同じことをしている。  
+Visual Studio の場合は「ASP.NET Core Web アプリ (Model-View-Controller)」を選択した場合と同じ。
 
-あとは GitHub Copilot Chat の Agent モードであれこれ指示してコードを修正させているところ
+VS Code だと複数のプロジェクトをソリューションに入れる方法がよく分からないので残りは Visual Studio でやってくことにする。  
+ただし README は Visual Studio のソリューションエクスプローラーに表示されないので VS Code で編集する。
 
-## 実行方法
+## 実行方法( VS Code の場合)
 
-Program.cs を開いて F5 を押すとなんか出てくるので、 C# を選んで ASP.NET MVC だったかで Default Configuration だったかを選べばとりあえず動くはず。
+Program.cs を開いて F5 を押すとなんか出てくるので、 C# を選んで ASP.NET MVC だったかで Default Configuration だったかを選べばとりあえず動くはず。  
+Visual Studio の場合は考えなくても普通に実行できるはず。
 
 ---
 
