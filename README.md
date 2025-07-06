@@ -14,6 +14,53 @@ Visual Studio の場合は「ASP.NET Core Web アプリ (Model-View-Controller)�
 VS Code だと複数のプロジェクトをソリューションに入れる方法がよく分からないので残りは Visual Studio でやってくことにする。  
 ただし README は Visual Studio のソリューションエクスプローラーに表示されないので VS Code で編集する。
 
+### NuGet パッケージの追加（MyMvcApp.DAL）
+
+ツール → NuGet パッケージ マネージャー → パッケージ マネージャー コンソール を開き、以下を実行
+```console
+Install-Package Microsoft.EntityFrameworkCore
+Install-Package Microsoft.EntityFrameworkCore.Sqlite
+```
+※ DB は SQLite を使います
+※ PowerShell を実行する前に、プロジェクトが MyMvcApp.DAL になっていることを確認する
+
+### 参照設定
+
+MyMvcApp プロジェクトを右クリック → 追加 → プロジェクト参照 → MyMvcApp.DAL を選択して追加
+
+### NuGet パッケージの追加（MyMvcApp）
+
+ツール → NuGet パッケージ マネージャー → パッケージ マネージャー コンソール を開き、以下を実行
+```console
+Install-Package Microsoft.EntityFrameworkCore
+Install-Package Microsoft.EntityFrameworkCore.Sqlite
+Install-Package Microsoft.EntityFrameworkCore.Tools
+```
+※ PowerShell を実行する前に、プロジェクトが MyMvcApp になっていることを確認する
+
+### いろいろとコードを修正
+
+1. Program.cs で DbContext を登録 → これはソースコードにすでに書いてあるから割愛
+2. appsettings.json に接続文字列を追加 → 追加したのは以下
+    ```json
+    {
+      "ConnectionStrings": {
+        "DefaultConnection": "Data Source=app.db"
+      }
+    }
+    ```
+
+### マイグレーションと DB 作成
+
+パッケージマネージャーコンソールで以下を実行（プロジェクトがどこになっていても関係ない）
+```console
+Add-Migration InitialCreate -Project MyMvcApp.DAL -StartupProject MyMvcApp
+Update-Database -Project MyMvcApp.DAL -StartupProject MyMvcApp
+```
+モデルクラスを追加したりしてマイグレーションをやり直す場合は、最初のコマンドの `InitialCreate` を適当な名前にしないとマイグレーションを適用できない。  
+名称変更して最初のコマンドをしたら、2つ目のコマンドはそのまま実行で問題ない。
+
+
 ## 実行方法( VS Code の場合)
 
 Program.cs を開いて F5 を押すとなんか出てくるので、 C# を選んで ASP.NET MVC だったかで Default Configuration だったかを選べばとりあえず動くはず。  
