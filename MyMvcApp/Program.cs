@@ -1,5 +1,6 @@
 using MyMvcApp.DAL;
 using Microsoft.EntityFrameworkCore;
+using MyMvcApp; // 追加: RequestLoggingMiddleware 用
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// ここでリクエストロギングミドルウェアを追加
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseRouting();
 
