@@ -1,28 +1,89 @@
 @model MyMvcApp.DAL.Models.User
 @{
-    ViewData["Title"] = "���[�U�[�o�^";
+    ViewData["Title"] = "ユーザー登録";
 }
 <h1>@ViewData["Title"]</h1>
 
-<form asp-action="Create" method="post">
+<form id="createUserForm">
     <div class="form-group">
-        <label asp-for="UserName"></label>
-        <input asp-for="UserName" class="form-control" />
+        <label asp-for="UserName">ユーザー名</label>
+        <input asp-for="UserName" class="form-control" id="userName" required />
         <span asp-validation-for="UserName" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Email"></label>
-        <input asp-for="Email" class="form-control" />
+        <label asp-for="Email">メールアドレス</label>
+        <input asp-for="Email" class="form-control" id="email" type="email" required />
         <span asp-validation-for="Email" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="PasswordHash">Password</label>
-        <input asp-for="PasswordHash" class="form-control" type="password" />
+        <label asp-for="PasswordHash">パスワード</label>
+        <input asp-for="PasswordHash" class="form-control" id="password" type="password" required />
         <span asp-validation-for="PasswordHash" class="text-danger"></span>
     </div>
-    <button type="submit" class="btn btn-primary">�o�^</button>
-    <a asp-action="Index" class="btn btn-secondary">�߂�</a>
+    <button type="submit" class="btn btn-primary">登録</button>
+    <a asp-action="Index" class="btn btn-secondary">戻る</a>
 </form>
+
+<div id="message" class="alert" style="display: none;"></div>
+
+<script>
+    document.getElementById('createUserForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const userName = document.getElementById('userName').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const messageDiv = document.getElementById('message');
+
+        // 基本的なバリデーション
+        if (!userName || !email || !password) {
+            showMessage('すべての項目を入力してください。', 'danger');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userName: userName,
+                    email: email,
+                    passwordHash: password
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showMessage('ユーザーが正常に作成されました。', 'success');
+                // フォームをクリア
+                document.getElementById('createUserForm').reset();
+                // 3秒後に一覧ページに戻る
+                setTimeout(() => {
+                    window.location.href = '/user';
+                }, 3000);
+            } else {
+                showMessage('作成に失敗しました: ' + result.message, 'danger');
+            }
+        } catch (error) {
+            showMessage('ネットワークエラーが発生しました: ' + error.message, 'danger');
+        }
+    });
+
+    function showMessage(message, type) {
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = message;
+        messageDiv.className = `alert alert-${type}`;
+        messageDiv.style.display = 'block';
+
+        // 5秒後にメッセージを非表示
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+    }
+</script>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
