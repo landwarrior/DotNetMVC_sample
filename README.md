@@ -219,3 +219,193 @@ WebOptimizer の利点：
 - CDN のサポート
 
 BuildBundlerMinifier と比較して、より柔軟な設定とパフォーマンス最適化が可能です。
+
+## ログ機能 (MyLogger)
+
+### MyLoggerクラスの概要
+
+`MyLogger`クラスは、`System.Diagnostics.Trace`を使用した汎用的なログ出力クラスです。
+タイムスタンプが自動的に付加され、将来的なログイン機能実装時にユーザーIDも含めることができます。
+
+### 主な機能
+
+- **タイムスタンプ**: 各ログに自動的に日時が付加されます
+- **ユーザーID**: 将来的なログイン機能実装時にユーザーIDを付加可能です
+- **呼び出し元情報**: ファイル名、メソッド名、行番号が自動的に記録されます
+- **カテゴリ別分類**: オプションでカテゴリを指定可能です
+
+### 基本的な使用方法
+
+```csharp
+using MyMvcApp.Common;
+
+// 情報レベルのログ
+MyLogger.Instance.Info("アプリケーションが開始されました");
+
+// 警告レベルのログ
+MyLogger.Instance.Warning("設定ファイルが見つかりません");
+
+// エラーレベルのログ
+MyLogger.Instance.Error("データベース接続に失敗しました");
+
+// 例外情報を含むエラーログ
+try
+{
+    // 何らかの処理
+}
+catch (Exception ex)
+{
+    MyLogger.Instance.Error("処理中に例外が発生しました", ex);
+}
+
+// デバッグレベルのログ（デバッグビルドでのみ出力）
+MyLogger.Instance.Debug("デバッグ情報");
+
+// カテゴリを指定した場合
+MyLogger.Instance.Info("カテゴリ付きログ", "Application");
+MyLogger.Instance.Warning("認証エラー", "Authentication");
+MyLogger.Instance.Error("データベースエラー", "Database");
+```
+
+### ログ出力例
+
+```
+2024-01-15 14:30:25.123 [INFO] アプリケーションが開始されました [in Program.cs::Main:25]
+2024-01-15 14:30:25.456 [INFO] ユーザー一覧を取得しました: 5件 [in UserController.cs::GetUsers:30]
+2024-01-15 14:30:25.789 [INFO][UID:USER123] ログインユーザーによる操作 [in UserController.cs::CreateUser:45]
+2024-01-15 14:30:26.012 [WARNING](Authentication) 認証エラー [in AuthController.cs::Login:15]
+2024-01-15 14:30:26.345 [ERROR](Database) データベースエラー [in UserService.cs::GetUserById:42]
+```
+
+### ユーザーIDの管理（将来的なログイン機能実装用）
+
+```csharp
+// 現在のユーザーIDを取得
+string userId = MyLogger.GetCurrentUserId();
+
+// ユーザーIDを手動で設定（将来的なログイン機能で自動設定予定）
+MyLogger.SetUserId("USER123");
+
+// ユーザーIDが設定されている場合、ログに自動的に含まれる
+MyLogger.Instance.Info("ログインユーザーによる操作");
+
+// カテゴリとユーザーIDを組み合わせた場合
+MyLogger.Instance.Info("ログインユーザーによる操作", "UserAction");
+MyLogger.Instance.Warning("ログインユーザーの警告", "UserAction");
+MyLogger.Instance.Error("ログインユーザーのエラー", "UserAction");
+```
+
+### メソッドの開始・終了ログ
+
+```csharp
+public async Task<string> SomeMethod(string input)
+{
+    MyLogger.Instance.MethodStart("SomeMethod", $"input={input}");
+    
+    try
+    {
+        // 処理
+        var result = "処理結果";
+        
+        MyLogger.Instance.MethodEnd("SomeMethod", $"result={result}");
+        return result;
+    }
+    catch (Exception ex)
+    {
+        MyLogger.Instance.Error("SomeMethodでエラーが発生しました", ex);
+        throw;
+    }
+}
+
+// カテゴリを指定した場合
+public async Task<string> SomeMethodWithCategory(string input)
+{
+    MyLogger.Instance.MethodStart("SomeMethodWithCategory", $"input={input}", "MyService");
+    
+    try
+    {
+        // 処理
+        var result = "処理結果";
+        
+        MyLogger.Instance.MethodEnd("SomeMethodWithCategory", $"result={result}", "MyService");
+        return result;
+    }
+    catch (Exception ex)
+    {
+        MyLogger.Instance.Error("SomeMethodWithCategoryでエラーが発生しました", ex, "MyService");
+        throw;
+    }
+}
+```
+
+### パフォーマンス計測（参考実装）
+
+```csharp
+// パフォーマンス計測の例（参考実装）
+var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+try
+{
+    // 何らかの重い処理
+    await SomeAsyncOperation();
+    
+    stopwatch.Stop();
+    MyLogger.Instance.Performance("処理名", stopwatch.ElapsedMilliseconds);
+}
+catch (Exception ex)
+{
+    stopwatch.Stop();
+    MyLogger.Instance.Error("エラーメッセージ", ex);
+    throw;
+}
+
+// カテゴリを指定した場合
+var stopwatch2 = System.Diagnostics.Stopwatch.StartNew();
+
+try
+{
+    // 何らかの重い処理
+    await SomeAsyncOperation();
+    
+    stopwatch2.Stop();
+    MyLogger.Instance.Performance("処理名", stopwatch2.ElapsedMilliseconds, "Performance");
+}
+catch (Exception ex)
+{
+    stopwatch2.Stop();
+    MyLogger.Instance.Error("エラーメッセージ", ex, "Performance");
+    throw;
+}
+```
+
+### 将来的なログイン機能実装
+
+将来的にログイン機能を実装する際は、以下のような形でユーザーIDをログに含めることができます：
+
+- ログイン時にユーザーIDを設定
+- ログアウト時にユーザーIDをクリア
+- 各操作でユーザーIDが自動的にログに含まれる
+
+### 使用例
+
+プロジェクト内では以下の場所でMyLoggerを使用しています：
+
+- `UserService.cs`: データベース操作のログ
+- `UserController.cs`: API呼び出しのログ
+- `MyLoggerExample.cs`: 使用例のサンプルコード
+
+### ログ出力の設定
+
+`appsettings.json`でログ出力の設定を行うことができます：
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  }
+}
+```
