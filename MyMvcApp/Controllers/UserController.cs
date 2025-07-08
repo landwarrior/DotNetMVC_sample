@@ -1,19 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
-using MyMvcApp.DAL; // DbContext
 using MyMvcApp.DAL.Models; // User
-using Microsoft.EntityFrameworkCore;
+using MyMvcApp.Services; // UserService
 using System.Threading.Tasks;
-using System.Linq;
 using System;
 
 namespace MyMvcApp.Controllers
 {
     public class UserController : Controller
     {
-        private readonly AppDbContext _context;
-        public UserController(AppDbContext context)
+        private readonly IUserService _userService;
+        public UserController(IUserService userService)
         {
-            _context = context;
+            _userService = userService;
         }
 
         [Route("user")]
@@ -30,22 +28,12 @@ namespace MyMvcApp.Controllers
         {
             try
             {
-                var users = await _context.Users
-                    .AsNoTracking()
-                    .Select(u => new
-                    {
-                        id = u.Id,
-                        userName = u.UserName,
-                        email = u.Email,
-                        createdAt = u.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
-                    })
-                    .ToListAsync();
-
+                var users = await _userService.GetAllUsersAsync();
                 return Json(new { success = true, data = users });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "ユーザー一覧の取得に失敗しました" });
+                return Json(new { success = false, message = ex.Message });
             }
         }
 
@@ -56,28 +44,12 @@ namespace MyMvcApp.Controllers
         {
             try
             {
-                var user = await _context.Users
-                    .AsNoTracking()
-                    .Where(u => u.Id == id)
-                    .Select(u => new
-                    {
-                        id = u.Id,
-                        userName = u.UserName,
-                        email = u.Email,
-                        createdAt = u.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
-                    })
-                    .FirstOrDefaultAsync();
-
-                if (user == null)
-                {
-                    return Json(new { success = false, message = "指定されたユーザーが見つかりません" });
-                }
-
+                var user = await _userService.GetUserByIdAsync(id);
                 return Json(new { success = true, data = user });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "ユーザー情報の取得に失敗しました" });
+                return Json(new { success = false, message = ex.Message });
             }
         }
 
@@ -93,35 +65,12 @@ namespace MyMvcApp.Controllers
                     return Json(new { success = false, message = "入力データが無効です" });
                 }
 
-                // ユーザー名の重複チェック
-                if (await _context.Users.AnyAsync(u => u.UserName == user.UserName))
-                {
-                    return Json(new { success = false, message = "このユーザー名は既に使用されています" });
-                }
-
-                // メールアドレスの重複チェック
-                if (await _context.Users.AnyAsync(u => u.Email == user.Email))
-                {
-                    return Json(new { success = false, message = "このメールアドレスは既に使用されています" });
-                }
-
-                user.CreatedAt = DateTime.Now;
-                _context.Add(user);
-                await _context.SaveChangesAsync();
-
-                var createdUser = new
-                {
-                    id = user.Id,
-                    userName = user.UserName,
-                    email = user.Email,
-                    createdAt = user.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
-                };
-
+                var createdUser = await _userService.CreateUserAsync(user);
                 return Json(new { success = true, data = createdUser, message = "ユーザーが正常に作成されました" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "ユーザーの作成に失敗しました" });
+                return Json(new { success = false, message = ex.Message });
             }
         }
 
@@ -132,20 +81,12 @@ namespace MyMvcApp.Controllers
         {
             try
             {
-                var user = await _context.Users.FindAsync(id);
-                if (user == null)
-                {
-                    return Json(new { success = false, message = "指定されたユーザーが見つかりません" });
-                }
-
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-
+                var result = await _userService.DeleteUserAsync(id);
                 return Json(new { success = true, message = "ユーザーが正常に削除されました" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "ユーザーの削除に失敗しました" });
+                return Json(new { success = false, message = ex.Message });
             }
         }
 
@@ -163,10 +104,15 @@ namespace MyMvcApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                user.CreatedAt = DateTime.Now;
-                _context.Add(user);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    await _userService.CreateUserAsync(user);
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", ex.Message);
+                }
             }
             return View(user);
         }
@@ -176,11 +122,13 @@ namespace MyMvcApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user != null)
+            try
             {
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
+                await _userService.DeleteUserAsync(id);
+            }
+            catch (Exception ex)
+            {
+                // エラーハンドリング（必要に応じてログ出力など）
             }
             return RedirectToAction(nameof(Index));
         }

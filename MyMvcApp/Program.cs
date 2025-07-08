@@ -1,6 +1,7 @@
 using MyMvcApp.DAL;
 using Microsoft.EntityFrameworkCore;
 using MyMvcApp; // 追加: RequestLoggingMiddleware 用
+using MyMvcApp.Services; // 追加: UserService 用
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Service層の依存性注入を追加
+builder.Services.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
 
