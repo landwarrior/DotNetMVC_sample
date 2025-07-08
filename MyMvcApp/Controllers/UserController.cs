@@ -56,6 +56,7 @@ namespace MyMvcApp.Controllers
         // REST API: 新しいユーザーを作成
         [HttpPost]
         [Route("api/users")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateUser([FromBody] User user)
         {
             try
@@ -77,6 +78,7 @@ namespace MyMvcApp.Controllers
         // REST API: ユーザーを削除
         [HttpDelete]
         [Route("api/users/{id}")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteUser(int id)
         {
             try

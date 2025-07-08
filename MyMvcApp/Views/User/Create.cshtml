@@ -2,6 +2,11 @@
 @{
     ViewData["Title"] = "ユーザー登録";
 }
+@Html.AntiForgeryToken()
+
+@section HeadScripts {
+    <script src="~/js/user-create.js" asp-append-version="true" defer type="module"></script>
+}
 <h1>@ViewData["Title"]</h1>
 
 <form id="createUserForm">
@@ -25,65 +30,6 @@
 </form>
 
 <div id="message" class="alert" style="display: none;"></div>
-
-<script>
-    document.getElementById('createUserForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const userName = document.getElementById('userName').value;
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const messageDiv = document.getElementById('message');
-
-        // 基本的なバリデーション
-        if (!userName || !email || !password) {
-            showMessage('すべての項目を入力してください。', 'danger');
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/users', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userName: userName,
-                    email: email,
-                    passwordHash: password
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                showMessage('ユーザーが正常に作成されました。', 'success');
-                // フォームをクリア
-                document.getElementById('createUserForm').reset();
-                // 3秒後に一覧ページに戻る
-                setTimeout(() => {
-                    window.location.href = '/user';
-                }, 3000);
-            } else {
-                showMessage('作成に失敗しました: ' + result.message, 'danger');
-            }
-        } catch (error) {
-            showMessage('ネットワークエラーが発生しました: ' + error.message, 'danger');
-        }
-    });
-
-    function showMessage(message, type) {
-        const messageDiv = document.getElementById('message');
-        messageDiv.textContent = message;
-        messageDiv.className = `alert alert-${type}`;
-        messageDiv.style.display = 'block';
-
-        // 5秒後にメッセージを非表示
-        setTimeout(() => {
-            messageDiv.style.display = 'none';
-        }, 5000);
-    }
-</script>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

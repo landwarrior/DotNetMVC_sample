@@ -12,6 +12,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// CSRFトークンの設定
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "RequestVerificationToken";
+});
+
 // Service層の依存性注入を追加
 builder.Services.AddScoped<IUserService, UserService>();
 
