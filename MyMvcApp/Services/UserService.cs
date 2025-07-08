@@ -18,7 +18,36 @@ namespace MyMvcApp.Services
             _context = context;
         }
 
-                public async Task<IEnumerable<object>> GetAllUsersAsync()
+        public async Task<User> GetUserByUserNameAsync(string userName)
+        {
+            MyLogger.Instance.MethodStart("GetUserByUserNameAsync", $"userName={userName}", "UserService");
+
+            try
+            {
+                var user = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.UserName == userName);
+
+                if (user == null)
+                {
+                    MyLogger.Instance.Warning($"指定されたユーザー名が見つかりません: {userName}", "UserService");
+                }
+                else
+                {
+                    MyLogger.Instance.Info($"ユーザーが見つかりました: {userName} (ID: {user.Id})", "UserService");
+                }
+
+                MyLogger.Instance.MethodEnd("GetUserByUserNameAsync", $"User found: {user?.UserName ?? "null"}", "UserService");
+                return user;
+            }
+            catch (Exception ex)
+            {
+                MyLogger.Instance.Error("ユーザー名による検索に失敗しました", ex, "UserService");
+                throw new InvalidOperationException("ユーザー名による検索に失敗しました");
+            }
+        }
+
+        public async Task<IEnumerable<object>> GetAllUsersAsync()
         {
             MyLogger.Instance.MethodStart("GetAllUsersAsync", "", "UserService");
 
@@ -57,7 +86,7 @@ namespace MyMvcApp.Services
             }
         }
 
-                public async Task<object> GetUserByIdAsync(int id)
+        public async Task<object> GetUserByIdAsync(int id)
         {
             MyLogger.Instance.MethodStart("GetUserByIdAsync", $"id={id}", "UserService");
 
@@ -101,7 +130,7 @@ namespace MyMvcApp.Services
             }
         }
 
-                public async Task<object> CreateUserAsync(User user)
+        public async Task<object> CreateUserAsync(User user)
         {
             MyLogger.Instance.MethodStart("CreateUserAsync", $"userName={user.UserName}, email={user.Email}", "UserService");
 

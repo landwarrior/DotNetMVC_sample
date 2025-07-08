@@ -1,11 +1,14 @@
 using System;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MyMvcApp.Common
 {
     /// <summary>
     /// 汎用的なログ出力クラス
     /// System.Diagnostics.Traceを使用してログを出力します
+    /// セッション情報から自動的にユーザーIDを取得します
     /// </summary>
     public class MyLogger
     {
@@ -22,6 +25,80 @@ namespace MyMvcApp.Common
         private static string _currentUserId = string.Empty;
 
         /// <summary>
+        /// HttpContextアクセサー（DIコンテナから取得）
+        /// </summary>
+        private static IHttpContextAccessor _httpContextAccessor;
+
+        /// <summary>
+        /// HttpContextアクセサーを設定（Program.csで設定）
+        /// </summary>
+        /// <param name="httpContextAccessor">HttpContextアクセサー</param>
+        public static void SetHttpContextAccessor(IHttpContextAccessor httpContextAccessor)
+        {
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        /// <summary>
+        /// セッションからユーザーIDを自動取得
+        /// </summary>
+        /// <returns>ユーザーID（取得できない場合は空文字）</returns>
+        private static string GetUserIdFromSession()
+        {
+            try
+            {
+                if (_httpContextAccessor?.HttpContext == null)
+                {
+                    return string.Empty;
+                }
+
+                var httpContext = _httpContextAccessor.HttpContext;
+
+                // セッションが利用可能かチェック
+                if (!httpContext.Session.IsAvailable)
+                {
+                    return string.Empty;
+                }
+
+                // セッションからユーザーIDを取得
+                var userId = httpContext.Session.GetString("UserId");
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    return userId;
+                }
+
+                // セッションIDをフォールバックとして使用
+                var sessionId = httpContext.Session.Id;
+                if (!string.IsNullOrEmpty(sessionId))
+                {
+                    return $"Session:{sessionId}";
+                }
+
+                return string.Empty;
+            }
+            catch (Exception)
+            {
+                // セッション取得でエラーが発生した場合は空文字を返す
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 現在のユーザーIDを取得（セッション情報を優先）
+        /// </summary>
+        public static string GetCurrentUserId()
+        {
+            // まずセッションから取得を試行
+            var sessionUserId = GetUserIdFromSession();
+            if (!string.IsNullOrEmpty(sessionUserId))
+            {
+                return sessionUserId;
+            }
+
+            // セッションから取得できない場合は静的フィールドから取得
+            return _currentUserId;
+        }
+
+        /// <summary>
         /// ユーザーIDを設定（将来的なログイン機能実装用）
         /// </summary>
         /// <param name="userId">ユーザーID</param>
@@ -31,11 +108,40 @@ namespace MyMvcApp.Common
         }
 
         /// <summary>
-        /// 現在のユーザーIDを取得
+        /// セッションにユーザーIDを保存
         /// </summary>
-        public static string GetCurrentUserId()
+        /// <param name="userId">ユーザーID</param>
+        public static void SetUserIdToSession(string userId)
         {
-            return _currentUserId;
+            try
+            {
+                if (_httpContextAccessor?.HttpContext?.Session != null)
+                {
+                    _httpContextAccessor.HttpContext.Session.SetString("UserId", userId);
+                }
+            }
+            catch (Exception)
+            {
+                // セッション保存でエラーが発生した場合は無視
+            }
+        }
+
+        /// <summary>
+        /// セッションからユーザーIDを削除
+        /// </summary>
+        public static void ClearUserIdFromSession()
+        {
+            try
+            {
+                if (_httpContextAccessor?.HttpContext?.Session != null)
+                {
+                    _httpContextAccessor.HttpContext.Session.Remove("UserId");
+                }
+            }
+            catch (Exception)
+            {
+                // セッション削除でエラーが発生した場合は無視
+            }
         }
 
         /// <summary>
@@ -202,9 +308,10 @@ namespace MyMvcApp.Common
             var fileName = System.IO.Path.GetFileName(filePath);
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
-            // ユーザーIDが設定されている場合は含める
-            var userInfo = !string.IsNullOrEmpty(_currentUserId) ? $"[UID:{_currentUserId}]" : "";
-            var cat = string.IsNullOrEmpty(category) ? $"({category})" : "";
+            // 現在のユーザーIDを取得（セッション情報を優先）
+            var currentUserId = GetCurrentUserId();
+            var userInfo = !string.IsNullOrEmpty(currentUserId) ? $"[UID:{currentUserId}]" : "";
+            var cat = !string.IsNullOrEmpty(category) ? $"({category})" : "";
 
             return $"{timestamp} [{level}]{userInfo}{cat} {message} [in {fileName}::{memberName}:{lineNumber}]";
         }

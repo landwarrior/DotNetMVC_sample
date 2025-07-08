@@ -6,6 +6,7 @@ class UserManager {
   constructor() {
     this.initializeEventListeners();
     this.loadUsers();
+    this.handleMessages();
   }
 
   // イベントリスナーの初期化
@@ -17,6 +18,40 @@ class UserManager {
         this.loadUsers();
       });
     }
+  }
+
+  // メッセージの処理
+  handleMessages() {
+    const successAlert = document.querySelector(".alert-success");
+    const errorAlert = document.querySelector(".alert-danger");
+
+    if (successAlert) {
+      // 3秒後にメッセージを非表示にして一覧を更新
+      setTimeout(() => {
+        successAlert.style.display = "none";
+        this.loadUsers();
+      }, 3000);
+    }
+
+    if (errorAlert) {
+      // エラーメッセージは5秒後に非表示
+      setTimeout(() => {
+        errorAlert.style.display = "none";
+      }, 5000);
+    }
+  }
+
+  // 認証エラーハンドリング
+  handleAuthError(error) {
+    if (error.status === 403 && error.response && error.response.requireLogin) {
+      CommonUtils.alert(
+        "ログインが必要です。未ログインであるためにデータ検索・更新・削除ができません。"
+      );
+      // ログイン画面にリダイレクト
+      window.location.href = "/Login";
+      return true;
+    }
+    return false;
   }
 
   // ユーザー一覧を取得する関数
@@ -54,6 +89,11 @@ class UserManager {
         );
       }
     } catch (error) {
+      // 認証エラーの場合は特別処理
+      if (this.handleAuthError(error)) {
+        return;
+      }
+
       // ネットワークエラーなどの場合
       CommonUtils.showError(
         "ネットワークエラーが発生しました: " + error.message
@@ -112,6 +152,11 @@ class UserManager {
         CommonUtils.alert("削除に失敗しました: " + result.message);
       }
     } catch (error) {
+      // 認証エラーの場合は特別処理
+      if (this.handleAuthError(error)) {
+        return;
+      }
+
       CommonUtils.alert("ネットワークエラーが発生しました: " + error.message);
     }
   }

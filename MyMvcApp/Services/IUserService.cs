@@ -12,5 +12,6 @@ namespace MyMvcApp.Services
         Task<object> DeleteUserAsync(int id);
         Task<bool> IsUserNameExistsAsync(string userName);
         Task<bool> IsEmailExistsAsync(string email);
+        Task<User> GetUserByUserNameAsync(string userName);
     }
 }

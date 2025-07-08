@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MyMvcApp.Controllers
 {
-    public class PrivacyController : Controller
+    public class PrivacyController : BaseController
     {
         [Route("privacy")]
         public IActionResult Index()

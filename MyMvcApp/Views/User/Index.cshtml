@@ -7,6 +7,23 @@
     <script src="~/js/user.js" asp-append-version="true" defer type="module"></script>
 }
 <h1>@ViewData["Title"]</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <p>
     <a asp-action="Create" class="btn btn-success">新規ユーザー登録</a>
     <button id="refreshBtn" class="btn btn-primary">一覧を更新</button>

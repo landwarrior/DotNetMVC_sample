@@ -5,4 +5,48 @@
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+
+    @if (ViewBag.IsLoggedIn == true)
+    {
+        <div class="alert alert-success mt-4">
+            <h5>ログイン状態</h5>
+            <p>ユーザーID: @ViewBag.CurrentUserId</p>
+            <form asp-controller="Login" asp-action="Logout" method="post" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-warning">ログアウト</button>
+            </form>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info mt-4">
+            <h5>ログイン</h5>
+            <p>ログインしてユーザー操作を追跡できます。</p>
+            <a href="@Url.Action("Index", "Login")" class="btn btn-primary">ログイン</a>
+        </div>
+    }
+
+    <div class="mt-4">
+        <h5>機能一覧</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">ユーザー管理</h6>
+                        <p class="card-text">ユーザーの作成、一覧表示、削除ができます。</p>
+                        <a href="@Url.Action("Index", "User")" class="btn btn-outline-primary">ユーザー管理</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">ログ機能</h6>
+                        <p class="card-text">セッション情報を使用した自動ログ出力機能をテストできます。</p>
+                        <p class="text-muted small">ログインすると、ユーザーIDが自動的にログに含まれます。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

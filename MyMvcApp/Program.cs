@@ -2,6 +2,7 @@ using MyMvcApp.DAL;
 using Microsoft.EntityFrameworkCore;
 using MyMvcApp; // 追加: RequestLoggingMiddleware 用
 using MyMvcApp.Services; // 追加: UserService 用
+using MyMvcApp.Common; // 追加: MyLogger 用
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// セッション機能を有効化
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// HttpContextアクセサーをDIコンテナに登録
+builder.Services.AddHttpContextAccessor();
 
 // CSRFトークンの設定
 builder.Services.AddAntiforgery(options =>
@@ -22,6 +34,10 @@ builder.Services.AddAntiforgery(options =>
 builder.Services.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
+
+// MyLoggerにHttpContextアクセサーを設定
+var httpContextAccessor = app.Services.GetRequiredService<IHttpContextAccessor>();
+MyLogger.SetHttpContextAccessor(httpContextAccessor);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -46,6 +62,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// セッションミドルウェアを追加
+app.UseSession();
 
 // ここでリクエストロギングミドルウェアを追加
 app.UseMiddleware<RequestLoggingMiddleware>();

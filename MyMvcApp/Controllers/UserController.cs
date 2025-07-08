@@ -3,13 +3,15 @@ using MyMvcApp.DAL.Models; // User
 using MyMvcApp.Services; // UserService
 using System.Threading.Tasks;
 using System;
+using System.Linq;
 using MyMvcApp.Common;
 
 namespace MyMvcApp.Controllers
 {
-    public class UserController : Controller
+    public class UserController : BaseController
     {
         private readonly IUserService _userService;
+
         public UserController(IUserService userService)
         {
             _userService = userService;
@@ -20,6 +22,63 @@ namespace MyMvcApp.Controllers
         {
             // 通常のMVCビューを返す（JavaScriptでAjax呼び出しを行うページ）
             return View();
+        }
+
+        // GET: /User/Create (新規ユーザー登録画面)
+        [HttpGet]
+        public IActionResult Create()
+        {
+            // ユーザー登録画面は認証不要（新規ユーザー登録のため）
+            return View();
+        }
+
+        // POST: /User/Create (新規ユーザー登録処理)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("UserName,Email,PasswordHash")] User user)
+        {
+            MyLogger.Instance.MethodStart("Create", $"userName={user?.UserName}, email={user?.Email}", "UserController");
+
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    await _userService.CreateUserAsync(user);
+                    MyLogger.Instance.Info($"新しいユーザーが作成されました: {user.UserName}", "UserController");
+
+                    // 成功メッセージをTempDataに保存
+                    TempData["SuccessMessage"] = $"ユーザー「{user.UserName}」が正常に登録されました。";
+
+                    return RedirectToAction(nameof(Index));
+                }
+                else
+                {
+                    MyLogger.Instance.Warning("ユーザー作成時にバリデーションエラーが発生しました", "UserController");
+                    // バリデーションエラーメッセージをTempDataに保存
+                    var errorMessages = string.Join("; ", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage));
+                    TempData["ErrorMessage"] = $"バリデーションエラー: {errorMessages}";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                MyLogger.Instance.Error("ユーザー作成に失敗しました", ex, "UserController");
+                // 具体的なエラーメッセージをTempDataに保存
+                TempData["ErrorMessage"] = $"ユーザー登録に失敗しました: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                MyLogger.Instance.Error("ユーザー作成に失敗しました", ex, "UserController");
+                TempData["ErrorMessage"] = $"ユーザー登録に失敗しました: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+            finally
+            {
+                MyLogger.Instance.MethodEnd("Create", $"userName={user?.UserName}", "UserController");
+            }
         }
 
         // REST API: ユーザー一覧をJSONで返す
@@ -118,46 +177,31 @@ namespace MyMvcApp.Controllers
             }
         }
 
-        // GET: /User/Create (通常のMVCビュー)
-        [HttpGet]
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: /User/Create (通常のMVCフォーム送信)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("UserName,Email,PasswordHash")] User user)
-        {
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    await _userService.CreateUserAsync(user);
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError("", ex.Message);
-                }
-            }
-            return View(user);
-        }
-
         // POST: /User/Delete/5 (通常のMVCフォーム送信)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            MyLogger.Instance.MethodStart("Delete", $"id={id}", "UserController");
+
             try
             {
                 await _userService.DeleteUserAsync(id);
+                MyLogger.Instance.Info($"ユーザーが削除されました: ID={id}", "UserController");
+
+                // 成功メッセージをTempDataに保存
+                TempData["SuccessMessage"] = "ユーザーが正常に削除されました。";
             }
             catch (Exception ex)
             {
-                // エラーハンドリング（必要に応じてログ出力など）
+                MyLogger.Instance.Error($"ユーザー削除に失敗しました: ID={id}", ex, "UserController");
+                TempData["ErrorMessage"] = $"ユーザーの削除に失敗しました: {ex.Message}";
             }
+            finally
+            {
+                MyLogger.Instance.MethodEnd("Delete", $"id={id}", "UserController");
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }

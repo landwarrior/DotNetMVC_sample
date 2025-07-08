@@ -81,10 +81,25 @@ export class ApiClient {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
         },
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const error = new Error(
+          errorData.message || "リクエストに失敗しました"
+        );
+        error.status = response.status;
+        error.response = errorData;
+        throw error;
+      }
+
       return await response.json();
     } catch (error) {
+      if (error.status) {
+        throw error;
+      }
       throw new Error("ネットワークエラーが発生しました: " + error.message);
     }
   }
@@ -95,12 +110,27 @@ export class ApiClient {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
           RequestVerificationToken: CommonUtils.getCsrfToken(),
         },
         body: JSON.stringify(data),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const error = new Error(
+          errorData.message || "リクエストに失敗しました"
+        );
+        error.status = response.status;
+        error.response = errorData;
+        throw error;
+      }
+
       return await response.json();
     } catch (error) {
+      if (error.status) {
+        throw error;
+      }
       throw new Error("ネットワークエラーが発生しました: " + error.message);
     }
   }
@@ -111,11 +141,26 @@ export class ApiClient {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
           RequestVerificationToken: CommonUtils.getCsrfToken(),
         },
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const error = new Error(
+          errorData.message || "リクエストに失敗しました"
+        );
+        error.status = response.status;
+        error.response = errorData;
+        throw error;
+      }
+
       return await response.json();
     } catch (error) {
+      if (error.status) {
+        throw error;
+      }
       throw new Error("ネットワークエラーが発生しました: " + error.message);
     }
   }
