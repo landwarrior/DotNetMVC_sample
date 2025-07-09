@@ -12,7 +12,7 @@ namespace MyMvcApp.Common
     /// </summary>
     public class MyLogger
     {
-        private static readonly MyLogger _instance = new MyLogger();
+        private static readonly MyLogger _instance = new();
 
         // シングルトンパターン
         private MyLogger() { }
@@ -27,7 +27,7 @@ namespace MyMvcApp.Common
         /// <summary>
         /// HttpContextアクセサー（DIコンテナから取得）
         /// </summary>
-        private static IHttpContextAccessor _httpContextAccessor;
+        private static IHttpContextAccessor? _httpContextAccessor;
 
         /// <summary>
         /// HttpContextアクセサーを設定（Program.csで設定）
